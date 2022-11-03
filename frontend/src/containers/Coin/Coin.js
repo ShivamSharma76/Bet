@@ -25,7 +25,7 @@ class Coin extends Component {
 
         this.state = {
             side: 'heads',
-            loading: undefined,
+            loading: false,
             betting_amount: '',
             selected_side: 'heads',
             win_message: 'You won!',
@@ -42,6 +42,7 @@ class Coin extends Component {
         await this.render_history(web3);
 
         console.log(this.state.games[0]);
+
     }
 
     flip_coin = async () => {
@@ -65,47 +66,72 @@ class Coin extends Component {
             }, 400);
             return;
         } 
+        
+        debugger
 
-        this.setState({loading: true})
-        const coinFlipInstance = new web3.eth.Contract(CoinABI, this.props.CONTRACTS.COINFLIP);
-
-        await coinFlipInstance.methods.Play().send({from: this.props.address, value: web3.utils.toWei(this.state.betting_amount, "ether")});
-
-        let gamecount = await coinFlipInstance.methods.getGameCount().call();
-        let lastgame = await coinFlipInstance.methods.getGameEntry(gamecount - 1).call();
-
-        let selected_side = this.state.selected_side;
-
-        //Yes I know this could have been shorter by having coin_side boolean instead of 'heads' or 'tails'
-        if (lastgame.winner && selected_side === 'heads') {
-            this.setState({ side: 'heads', loading: false })
-            toast.success(`🦄 Its heads! ${this.state.win_message}`, {
-                position: "top-center",
-            });
-
-        } else if (lastgame.winner && selected_side === 'tails') {
-            this.setState({ side: 'tails', loading: false })
-            toast.success(`🦄 Its tails! ${this.state.win_message}`, {
-                position: "top-center",
-            });
+        try {
+            
+            this.setState({loading: true})
+            const coinFlipInstance = new web3.eth.Contract(CoinABI, this.props.CONTRACTS.COINFLIP);
+    
+            await coinFlipInstance.methods.Play().send({from: this.props.address, value: web3.utils.toWei(this.state.betting_amount, "ether")});
+            
+            let gamecount = await coinFlipInstance.methods.getGameCount().call();
+            let lastgame = await coinFlipInstance.methods.getGameEntry(gamecount - 1).call();
+            
+            console.log("lastGame--------",lastgame);
+            let selected_side = this.state.selected_side;
+            //Yes I know this could have been shorter by having coin_side boolean instead of 'heads' or 'tails'
+            if (lastgame.winner && selected_side === 'heads') {
+                debugger
+                this.setState({ side: 'heads' })
+                this.setState({loading:false}) 
+                window.alert("its head baby....")
+                toast.success(`🦄 Its heads! ${this.state.win_message}`, {
+                    position: "top-center",
+                });
+    
+            } else if (lastgame.winner && selected_side === 'tails') {
+                this.setState({ side: 'tails'})
+                this.setState({loading:false}) 
+                window.alert("its tailss baby....")
+                toast.success(`🦄 Its tails! ${this.state.win_message}`, {
+                    position: "top-center", 
+                });
+            }
+              else if (lastgame.winner === false && selected_side === 'heads') {
+                this.setState({ side: 'tails'})
+                this.setState({loading:false}) 
+                window.alert("its not head baby....")
+                toast.error(`🦄 Its tails! ${this.state.lose_message}`, {
+                    position: "top-center",
+                });
+            }
+              else if (lastgame.winner === false && selected_side === 'tails') {
+                this.setState({ side: 'heads'})
+                this.setState({loading:false}) 
+                window.alert("its not head baby....")
+                toast.error(`🦄 Its heads! ${this.state.lose_message}`, {
+                    position: "top-center",
+                });
+            }
+            this.render_history(web3);
+            this.setState({loading:false})
+        } catch (error) {
+            console.log("error:---",error)
         }
-          else if (lastgame.winner === false && selected_side === 'heads') {
-            this.setState({ side: 'tails', loading: false })
-            toast.error(`🦄 Its tails! ${this.state.lose_message}`, {
-                position: "top-center",
-            });
-        }
-          else if (lastgame.winner === false && selected_side === 'tails') {
-            this.setState({ side: 'heads', loading: false })
-            toast.error(`🦄 Its heads! ${this.state.lose_message}`, {
-                position: "top-center",
-            });
-        }
-        this.render_history(web3);
+
+
+
+        
+
     }
 
     render_coin = (side) => {
         let coin_side = side === 'heads' ? heads : tails;
+        // window.alert("head")
+        // this.setState({loading:false})
+
         return (
             <img src = {coin_side} width = '200px' height = '200px' alt = 'coinside' draggable = {false} className = {classes.coinimg} />
         )
@@ -144,7 +170,8 @@ class Coin extends Component {
             }
         }
 
-        this.setState({games: games});
+        this.setState({games: games , loading:false});
+
     }
 
     format_address = (address) => {
